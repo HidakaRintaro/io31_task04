@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import time
@@ -8,12 +7,12 @@ import spidev
 class MCP3008_Class:
     
     """ コンストラクタ """
-    def __init__(self, ref_volts, ch):
-        self.ref_volts = ref_volts
+    def __init__(self, vcc, ch):
+        self.vcc = vcc
         self.ch = ch
         self.spi = spidev.SpiDev()
         self.spi.open(0,0)
-        self.spi.max_speed_hz = 100000 # 3.3V:100kHz, 5V:200kHz
+        self.spi.max_speed_hz = 100000 # 必須の記述 (3.3V:100kHz, 5V:200kHz)
             
     """ 電圧取得 """
     def GetVoltage(self):
@@ -25,15 +24,14 @@ class MCP3008_Class:
         # https://101010.fun/iot/raspi-spi.html#header-3
         # ↑ここのサイトの ((raw[1]&3) << 8) + raw[2] の解説がわかりやすかった
         data = ((adc[1]&3) << 8) + adc[2]
-        volts = data / float(1023) * self.ref_volts 
+        print("ad:{:.0f}".format(data))
+        volts = data * self.vcc / float(1023)
         volts = round(volts, 4) # 少数の丸め処理
         return volts
     
     """ 距離を推定する """
-    def GetDist(self):
-        volts = self.GetVoltage()
-        dist_inv = 0.0502 * volts - 0.0123 # 実測から求めた電圧と1/距離[cm]の近似直線
-        dist = 1/dist_inv # 1/距離[1/cm]を距離[cm]に変換
+    def GetDist(self, volts):
+        dist = 26.549 * pow(volts, -1.2091) 
         return dist
     
     """ 終了処理 """
@@ -42,13 +40,13 @@ class MCP3008_Class:
 
 """ main関数 """
 if __name__ == '__main__':
-    ADC = MCP3008_Class(ref_volts=3.3, ch=0)
+    ADC = MCP3008_Class(vcc=3.3, ch=0)
     try:
         while True:
             volts = ADC.GetVoltage()
-            dist = ADC.GetDist()
-            print("volts: {:8.2f}".format(volts)) # 0.22 ~ 0.61
-            print("{:8.2f} cm".format(dist))
+            print("volts:{:1.2f}".format(volts))
+            #dist = ADC.GetDist(volts=volts)
+           # print("volts:  {:.2f},   {:.2f} cm".format(volts, dist)) 
             time.sleep(1)
             
     except KeyboardInterrupt:
