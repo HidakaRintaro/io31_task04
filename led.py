@@ -2,6 +2,21 @@
 
 import time
 import spidev
+import RPi.GPIO as GPIO
+
+LEDPIN1 = 26
+LEDPIN2 = 16
+LEDPIN3 = 12
+LEDPIN4 = 6
+LEDPIN5 = 5
+
+GPIO.setmode(GPIO.BCM)
+# ピンの番号では無く、GPIOの番号を指定する
+GPIO.setup(LEDPIN1, GPIO.OUT)
+GPIO.setup(LEDPIN2, GPIO.OUT)
+GPIO.setup(LEDPIN3, GPIO.OUT)
+GPIO.setup(LEDPIN4, GPIO.OUT)
+GPIO.setup(LEDPIN5, GPIO.OUT)
 
 """ MCP3008からタイを取得するクラス """
 class MCP3008_Class:
@@ -24,7 +39,6 @@ class MCP3008_Class:
         # https://101010.fun/iot/raspi-spi.html#header-3
         # ↑ここのサイトの ((raw[1]&3) << 8) + raw[2] の解説がわかりやすかった
         data = ((adc[1]&3) << 8) + adc[2]
-        print("ad:{:.0f}".format(data))
         volts = data * self.vcc / float(1023)
         volts = round(volts, 4) # 少数の丸め処理
         return volts
@@ -39,6 +53,53 @@ class MCP3008_Class:
     def Cleanup(self):
         self.spi.close()
 
+"""
+LED On Off
+[距離 <= 10]のとき0つ点灯
+[10 < 距離 <= 20]のとき1つ点灯
+[20 < 距離 <= 30]のとき2つ点灯
+[30 < 距離 <= 40]のとき3つ点灯
+[40 < 距離 <= 50]のとき4つ点灯
+[50 < 距離 <= 60]のとき5つ点灯
+"""
+def LedOnOff(dist):
+    if dist <= 10:
+        GPIO.output(LEDPIN1, GPIO.LOW)
+        GPIO.output(LEDPIN2, GPIO.LOW)
+        GPIO.output(LEDPIN3, GPIO.LOW)
+        GPIO.output(LEDPIN4, GPIO.LOW)
+        GPIO.output(LEDPIN5, GPIO.LOW)
+    elif dist <= 20:
+        GPIO.output(LEDPIN1, GPIO.HIGH)
+        GPIO.output(LEDPIN2, GPIO.LOW)
+        GPIO.output(LEDPIN3, GPIO.LOW)
+        GPIO.output(LEDPIN4, GPIO.LOW)
+        GPIO.output(LEDPIN5, GPIO.LOW)
+    elif dist <= 30:
+        GPIO.output(LEDPIN1, GPIO.HIGH)
+        GPIO.output(LEDPIN2, GPIO.HIGH)
+        GPIO.output(LEDPIN3, GPIO.LOW)
+        GPIO.output(LEDPIN4, GPIO.LOW)
+        GPIO.output(LEDPIN5, GPIO.LOW)
+    elif dist <= 40:
+        GPIO.output(LEDPIN1, GPIO.HIGH)
+        GPIO.output(LEDPIN2, GPIO.HIGH)
+        GPIO.output(LEDPIN3, GPIO.HIGH)
+        GPIO.output(LEDPIN4, GPIO.LOW)
+        GPIO.output(LEDPIN5, GPIO.LOW)
+    elif dist <= 50:
+        GPIO.output(LEDPIN1, GPIO.HIGH)
+        GPIO.output(LEDPIN2, GPIO.HIGH)
+        GPIO.output(LEDPIN3, GPIO.HIGH)
+        GPIO.output(LEDPIN4, GPIO.HIGH)
+        GPIO.output(LEDPIN5, GPIO.LOW)
+    elif dist <= 60:
+        GPIO.output(LEDPIN1, GPIO.HIGH)
+        GPIO.output(LEDPIN2, GPIO.HIGH)
+        GPIO.output(LEDPIN3, GPIO.HIGH)
+        GPIO.output(LEDPIN4, GPIO.HIGH)
+        GPIO.output(LEDPIN5, GPIO.HIGH)
+
 """ main関数 """
 if __name__ == '__main__':
     # chが0だとなぜか動かないので、1で実施する
@@ -47,8 +108,7 @@ if __name__ == '__main__':
         while True:
             volts = ADC.GetVoltage()
             dist = ADC.GetDist(volts=volts)
-            print("volts:  {:.2f},   {:.2f} cm".format(volts, dist)) 
-            time.sleep(1)
+            LedOnOff(dist)
             
     except KeyboardInterrupt:
         print("\nCtl+C")
@@ -56,6 +116,7 @@ if __name__ == '__main__':
         print(str(e))
     finally:
         ADC.Cleanup()
+        GPIO.cleanup()
         print("\nexit program")
 
 
