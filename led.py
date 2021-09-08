@@ -60,7 +60,7 @@ LED On Off
 [20 < 距離 <= 30]のとき2つ点灯
 [30 < 距離 <= 40]のとき3つ点灯
 [40 < 距離 <= 50]のとき4つ点灯
-[50 < 距離 <= 60]のとき5つ点灯
+[50 < 距離      ]のとき5つ点灯
 """
 def LedOnOff(dist):
     if dist <= 10:
@@ -93,7 +93,7 @@ def LedOnOff(dist):
         GPIO.output(LEDPIN3, GPIO.HIGH)
         GPIO.output(LEDPIN4, GPIO.HIGH)
         GPIO.output(LEDPIN5, GPIO.LOW)
-    elif dist <= 60:
+    else:
         GPIO.output(LEDPIN1, GPIO.HIGH)
         GPIO.output(LEDPIN2, GPIO.HIGH)
         GPIO.output(LEDPIN3, GPIO.HIGH)
