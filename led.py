@@ -31,6 +31,7 @@ class MCP3008_Class:
     
     """ 距離を推定する """
     def GetDist(self, volts):
+        # 計算式参考（http://myct.jp/arduino/index.php?%E8%B7%9D%E9%9B%A2%E3%82%BB%E3%83%B3%E3%82%B5+GP2Y0A21YK0F）
         dist = 26.549 * pow(volts, -1.2091) 
         return dist
     
@@ -40,13 +41,13 @@ class MCP3008_Class:
 
 """ main関数 """
 if __name__ == '__main__':
-    ADC = MCP3008_Class(vcc=3.3, ch=0)
+    # chが0だとなぜか動かないので、1で実施する
+    ADC = MCP3008_Class(vcc=3.3, ch=1)
     try:
         while True:
             volts = ADC.GetVoltage()
-            print("volts:{:1.2f}".format(volts))
-            #dist = ADC.GetDist(volts=volts)
-           # print("volts:  {:.2f},   {:.2f} cm".format(volts, dist)) 
+            dist = ADC.GetDist(volts=volts)
+            print("volts:  {:.2f},   {:.2f} cm".format(volts, dist)) 
             time.sleep(1)
             
     except KeyboardInterrupt:
